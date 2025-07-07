@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코사인 유사도 계산기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .execute-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .execute-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .reset-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2868a7;
+            margin-bottom: 5px;
+        }
+
+        .result-description {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .error {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8d7da;
+            color: #721c24;
+            border-radius: 10px;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e9f7fe;
+            border-radius: 10px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .info h3 {
+            color: #0c5460;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info p {
+            color: #0c5460;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>코사인 유사도 계산기</h1>
+        
+        <div class="input-group">
+            <label for="array1">배열 1</label>
+            <input type="text" id="array1" placeholder="13, 23, 452, 15">
+            <div class="help-text">쉼표로 구분된 숫자들을 입력하세요</div>
+        </div>
+
+        <div class="input-group">
+            <label for="array2">배열 2</label>
+            <input type="text" id="array2" placeholder="-25, 24, 591, -13">
+            <div class="help-text">쉼표로 구분된 숫자들을 입력하세요</div>
+        </div>
+
+        <button id="actionBtn" class="execute-btn">실행</button>
+
+        <div id="error" class="error"></div>
+        
+        <div id="result" class="result">
+            <div class="result-title">유사도</div>
+            <div id="similarityValue" class="result-value">0.000000</div>
+            <div class="result-description">범위: -1 (정반대) ~ 1 (동일)</div>
+        </div>
+
+    </div>
+
+    <script>
+        let isCalculated = false;
+        const array1Input = document.getElementById('array1');
+        const array2Input = document.getElementById('array2');
+        const actionBtn = document.getElementById('actionBtn');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const similarityValue = document.getElementById('similarityValue');
+
+        function parseArray(input) {
+            const cleaned = input.trim().replace(/\s+/g, '');
+            if (!cleaned) throw new Error('배열이 비어있습니다');
+            
+            const numbers = cleaned.split(',').map(str => {
+                const num = parseFloat(str.trim());
+                if (isNaN(num)) throw new Error(`"${str.trim()}"는 유효한 숫자가 아닙니다`);
+                return num;
+            });
+            
+            if (numbers.length === 0) throw new Error('배열이 비어있습니다');
+            return numbers;
+        }
+
+        function calculateCosineSimilarity(a, b) {
+            if (a.length !== b.length) {
+                throw new Error('두 배열의 길이가 같아야 합니다');
+            }
+            
+            // 내적 계산: dot(A, B)
+            const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
+            
+            // 벡터의 크기 계산: norm(A) * norm(B)
+            const normA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+            const normB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+            
+            if (normA === 0 || normB === 0) {
+                throw new Error('영벡터에 대해서는 유사도를 계산할 수 없습니다');
+            }
+            
+            // dot(A, B) / (norm(A) * norm(B))
+            return dotProduct / (normA * normB);
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.add('show');
+            result.classList.remove('show');
+        }
+
+        function hideError() {
+            error.classList.remove('show');
+        }
+
+        function showResult(similarity) {
+            similarityValue.textContent = similarity.toFixed(6);
+            result.classList.add('show');
+            hideError();
+        }
+
+        function hideResult() {
+            result.classList.remove('show');
+        }
+
+        function executeCalculation() {
+            try {
+                const input1 = array1Input.value.trim();
+                const input2 = array2Input.value.trim();
+                
+                if (!input1 || !input2) {
+                    throw new Error('두 배열을 모두 입력해주세요');
+                }
+
+                const arr1 = parseArray(input1);
+                const arr2 = parseArray(input2);
+                
+                const similarity = calculateCosineSimilarity(arr1, arr2);
+                
+                showResult(similarity);
+                isCalculated = true;
+                actionBtn.textContent = '리셋';
+                actionBtn.className = 'reset-btn';
+                
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function resetCalculation() {
+            array1Input.value = '';
+            array2Input.value = '';
+            hideResult();
+            hideError();
+            isCalculated = false;
+            actionBtn.textContent = '실행';
+            actionBtn.className = 'execute-btn';
+        }
+
+        actionBtn.addEventListener('click', () => {
+            if (isCalculated) {
+                resetCalculation();
+            } else {
+                executeCalculation();
+            }
+        });
+
+        // Enter 키로 실행
+        [array1Input, array2Input].forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !isCalculated && array1Input.value.trim() && array2Input.value.trim()) {
+                    executeCalculation();
+                }
+            });
+        });
+
+        // 입력할 때 에러 메시지 숨기기
+        [array1Input, array2Input].forEach(input => {
+            input.addEventListener('input', hideError);
+        });
+    </script>
+</body>
+</html>
